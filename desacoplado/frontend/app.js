@@ -369,3 +369,4 @@ function resolveAppVersion() {
 function stripTrailingSlash(value) {
   return value.replace(/\/$/, "");
 }
+

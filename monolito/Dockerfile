@@ -1,32 +1,26 @@
-# syntax=docker/dockerfile:1.7
+FROM golang:1.26-alpine AS builder
 
-FROM golang:1.26-alpine AS build
+WORKDIR /app
 
-WORKDIR /src
+RUN apk add --no-cache git
 
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY internal ./internal
-COPY monolito ./monolito
+COPY . .
 
-ARG TARGETOS=linux
-ARG TARGETARCH=amd64
-ARG APP_VERSION=dev
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o gotodolist ./monolito
 
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go build -trimpath -ldflags="-s -w -X github.com/elton-bt/gotodolist/internal/config.version=${APP_VERSION}" -o /out/gotodolist-monolito ./monolito
-
-FROM alpine:3.22.4 AS runtime
-
-RUN addgroup -S app && adduser -S app -G app && apk add --no-cache ca-certificates wget
+FROM alpine:3.24
 
 WORKDIR /app
 
-COPY --from=build /out/gotodolist-monolito /app/gotodolist-monolito
+RUN adduser -D -u 10001 appuser
+USER appuser
 
-EXPOSE 8080
+COPY --from=builder /app/gotodolist .
+COPY --from=builder /app/desacoplado/frontend/ ./desacoplado/frontend/
 
-USER app
+EXPOSE 8081
 
-ENTRYPOINT ["/app/gotodolist-monolito"]
+ENTRYPOINT ["./gotodolist"]

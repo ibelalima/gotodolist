@@ -1,4 +1,4 @@
-name: CI - Hardened & Secure
+name: CI & DevSecOps - Hardened & Secure
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ on:
 permissions:
   contents: read
 
-# 🔒 BLINDAGEM 2: Controle de concorrência (cancela builds obsoletos no mesmo PR)
+# 🔒 BLINDAGEM 2: Controlo de concorrência (cancela builds obsoletos no mesmo PR)
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -56,8 +56,8 @@ jobs:
   container-validation:
     name: 🐳 Validação e Build dos Contêineres
     runs-on: ubuntu-latest
-    needs: lint-and-test
-    timeout-minutes: 15 # 🔒 Prevenção de timeout no build
+    needs: [lint-and-test]
+    timeout-minutes: 15
 
     steps:
       - name: 📥 Checkout Seguro
@@ -78,3 +78,43 @@ jobs:
 
       - name: 🏗️ Build da Imagem do Frontend
         run: docker build -f desacoplado/frontend/Dockerfile -t gotodolist-frontend:ci .
+
+  # -------------------------------------------------------------
+  # CENÁRIO 3: DEVSECOPS (SAST SEMGREP & CONTAINER TRIVY)
+  # -------------------------------------------------------------
+  security-scan:
+    name: 🛡️ DevSecOps (SAST Semgrep & Container Trivy)
+    needs: [lint-and-test] # Encadeado para executar após os testes funcionais
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: 📥 Checkout do Código
+        uses: actions/checkout@v4
+
+      # ETAPA 1: SAST - Análise Estática de Código com Semgrep
+      - name: 🔍 SAST com Semgrep (Regras OWASP Top 10)
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/owasp-top-ten
+            p/security-audit
+
+      # ETAPA 2: Build da Imagem de Teste Local (Monólito)
+      - name: 🐳 Compilar Imagem Docker Efêmera para Análise
+        run: |
+          docker build -f monolito/Dockerfile -t app-audit:local .
+
+      # ETAPA 3: Scanner de Vulnerabilidades com Aqua Trivy
+      - name: 🛡️ Escanear Imagem Docker com Aqua Security Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'app-audit:local'
+          format: 'table'
+          # 🚨 QUEBRA O PIPELINE SE HOUVER VULNERABILIDADE GRAVE
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
