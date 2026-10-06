@@ -1,0 +1,7 @@
+# Arquivo de definição de proprietários de código (CODEOWNERS)
+* @ibelalima
+
+Dockerfile* @ibelalima
+docker-compose*.yml @ibelalima
+docker-compose*.yaml @ibelalima
+.github/workflows/ @ibelalima
