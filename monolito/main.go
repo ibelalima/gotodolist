@@ -49,4 +49,3 @@ func main() {
 
 	logger.Info("servidor encerrado")
 }
-// Feature v1.0.0 iniciada
