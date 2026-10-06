@@ -49,3 +49,4 @@ func main() {
 
 	logger.Info("servidor encerrado")
 }
+echo "// Feature v1.0.0 iniciada" >> monolito/main.go
