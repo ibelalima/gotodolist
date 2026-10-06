@@ -111,3 +111,5 @@ go test ./...
 - Nao registre segredos reais em código, compose, Dockerfile ou README.
 - As mensagens de erro para indisponibilidade do banco são genéricas por design.
 - O projeto não imprime a senha do banco.
+
+<!-- Feature v1.0.0 iniciada -->
